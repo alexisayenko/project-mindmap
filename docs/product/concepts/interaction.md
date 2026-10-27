@@ -4,7 +4,12 @@ Vocabulary for how the user points at things on the canvas.
 
 - **Activated** - the circle or line the user has clicked (or otherwise picked).
   Activating several elements at once (Ctrl/Shift/Alt/Meta+drag marquee, Ctrl+A) is a
-  group activation. Clicking empty canvas or pressing Esc deactivates.
+  group activation. Activation is cleared only by: a click on empty canvas (pointer
+  moved less than 4px between down and up), a right click anywhere on the canvas
+  (in relation mode it only cancels the relation), or Esc. Activating another
+  circle or line by plain click replaces the activation with that one object;
+  Shift/Ctrl/Alt/Meta+click toggles it in the set instead. Dragging never changes
+  activation by itself: panning the empty canvas or dragging circles leaves it as is.
 - **Infobox** - the side panel (right on wide screens, bottom sheet on narrow
   ones) that shows the activated element when exactly one is activated:
   an editable name, a type hint (Concept / Relation), the description for a
@@ -14,7 +19,7 @@ Vocabulary for how the user points at things on the canvas.
   from it (the only way to start a relation). The next circle
   clicked becomes the other end.
 - **Relation mode** - the state between pressing + and the next click; a live
-  line follows the pointer. Esc, right click or a click elsewhere leaves it.
+  line follows the pointer. Click another circle relates to it. Click on empty canvas creates a new circle there (default name), relates the source to it, activates it and opens its name editor with the text selected (Enter/blur commits, Esc keeps the default name). Esc, right click or a click on the source circle cancels without creating anything.
 
 In code the activated set is `activated` and the CSS class is `.activated`.
 

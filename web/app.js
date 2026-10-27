@@ -417,6 +417,14 @@ svg.addEventListener('pointerdown', ev => {
       relFrom = null;
       activated = new Set([tid]);
       changed();
+    } else if (ev.button === 0 && !tid) {
+      const pt = point(ev), n = { id: uid(), name: DEFAULT_NAME, description: '', x: pt.x, y: pt.y, properties: {} };
+      model.entities.push(n);
+      addRelation(relFrom, n.id);
+      relFrom = null;
+      activated = new Set([n.id]);
+      changed();
+      startEdit(n, true);
     } else cancelRelation();
     return;
   }
@@ -428,12 +436,12 @@ svg.addEventListener('pointerdown', ev => {
   const start = point(ev);
 
   const marquee = !id && (ev.shiftKey || ev.ctrlKey || ev.altKey || ev.metaKey);
-  if (id && ev.shiftKey) {
+  if (id && (ev.shiftKey || ev.ctrlKey || ev.altKey || ev.metaKey)) {
     activated.has(id) ? activated.delete(id) : activated.add(id);
     render();
     return;
   }
-  if (!activated.has(id)) activated = new Set(id ? [id] : []);
+  if (id && !activated.has(id)) activated = new Set([id]);
   render();
 
   const sStart = screenPoint(ev), v0 = { ...model.view };
@@ -484,6 +492,7 @@ svg.addEventListener('pointerdown', ev => {
       return;
     }
     if ((drag && drag.moved) || (pan && pan.moved)) { save(); lastTap.t = 0; return; }
+    if (pan && activated.size) { activated = new Set(); render(); }
     const sp = screenPoint(u), p = point(u), now = Date.now();
     const isDouble = now - lastTap.t < 400 && Math.hypot(sp.x - lastTap.x, sp.y - lastTap.y) < 20;
     lastTap = { t: isDouble ? 0 : now, x: sp.x, y: sp.y };
@@ -547,7 +556,11 @@ $('export').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
-svg.addEventListener('contextmenu', ev => { ev.preventDefault(); cancelRelation(); });
+svg.addEventListener('contextmenu', ev => {
+  ev.preventDefault();
+  if (relFrom) return cancelRelation();
+  if (activated.size) { activated = new Set(); render(); }
+});
 svg.addEventListener('wheel', ev => {
   ev.preventDefault();
   const s = screenPoint(ev);
