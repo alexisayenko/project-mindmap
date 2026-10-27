@@ -1,6 +1,8 @@
 # Core model
 
-Status: idea. Nothing here is built; the open points are listed
+Status: v0 implemented: entities, relations; regions, levels, properties UI not yet.
+The v0 data shape is `{version: 0, entities: [{id, name, x, y, properties: {}}], relations: [{id, from, to}]}`
+([task-0002](../../tasks/task-0002.md)). The open points are listed
 at the end and tracked in [task-0001](../../tasks/task-0001.md).
 
 ## Entity

@@ -4,13 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>mindgram</title>
-<style>
-:root{color-scheme:light dark;--bg:#fff;--fg:#1a1a1a}
-@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#eaeaea}}
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--fg);font:1.125rem/1.5 system-ui,sans-serif;padding:0 16px;text-align:center}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main><p>mindgram - mindmap + diagram for ontology maps. Coming soon.</p></main>
+<header id="toolbar">
+  <strong class="brand">mindgram</strong>
+  <button id="connect" type="button">Connect</button>
+  <button id="delete" type="button">Delete</button>
+  <button id="export" type="button">Export JSON</button>
+  <button id="clear" type="button">Clear</button>
+</header>
+<svg id="canvas" aria-label="Concept map"></svg>
+<footer id="hint">Double-click to add a concept. Drag to move. Connect circles to relate them.</footer>
+<script src="app.js"></script>
 </body>
 </html>

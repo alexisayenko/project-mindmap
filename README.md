@@ -5,7 +5,7 @@ is a mindmap + diagram tool for quickly building ontology maps
 (concept maps, knowledge graphs): entities and the relations
 between them.
 
-**Status: idea / pre-start.** No code yet. Hosting: Cloudflare Workers static assets
+**Status: v0 canvas implemented** (`web/`: circles, relations, drag, rename, delete, localStorage autosave, JSON export; regions, levels, properties UI not yet). Hosting: Cloudflare Workers static assets
 (`web/`, `wrangler.jsonc`), domain mindmap.isayenko.net, manual deploy
 (`npm run deploy`). Stack and monetization are not decided.
 
@@ -30,6 +30,7 @@ has a level coordinate.
   layer, and the user goes down or up.
 
 Details and open points: [docs/product/concepts/core-model.md](docs/product/concepts/core-model.md).
+Philosophy (Alex's notes, in his words): [docs/product/philosophy.md](docs/product/philosophy.md).
 
 ## Planned features
 
