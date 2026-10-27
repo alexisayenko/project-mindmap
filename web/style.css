@@ -13,7 +13,7 @@ button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
 #hint{padding:6px 12px;font-size:.85rem;color:var(--muted);text-align:center;border-top:1px solid var(--border)}
 .node circle,.edge line{vector-effect:non-scaling-stroke}
 #zoom-level{min-width:4ch;text-align:center;font-variant-numeric:tabular-nums}
-.node circle{fill:var(--fill);stroke:var(--line);stroke-width:2;cursor:grab}
+.node circle{fill:var(--fill);stroke:var(--line);stroke-width:2}
 .node text{fill:var(--fg);font:16px system-ui,sans-serif;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 .node.activated circle{stroke:var(--accent);stroke-width:3}
 .edge line{stroke:var(--line);stroke-width:2}
@@ -38,8 +38,8 @@ button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
 .edge.activated .pill{stroke:var(--accent)}
 .edge .label{fill:var(--fg);font:14px system-ui,sans-serif;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 
-#canvas{cursor:grab}
-.node circle{cursor:grab}
+#canvas{cursor:default}
+.node circle,.edge line,.edge .pill{cursor:pointer}
 html.grabbing,html.grabbing *{cursor:grabbing!important}
 html.marquee,html.marquee *{cursor:crosshair!important}
 #infobox:has(#info-text[hidden]){bottom:auto}
@@ -49,4 +49,4 @@ html.marquee,html.marquee *{cursor:crosshair!important}
 .plus .glyph{cursor:pointer;fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;pointer-events:none;vector-effect:non-scaling-stroke}
 .relline{stroke:var(--accent);stroke-width:2;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;pointer-events:none}
 .node.src circle{stroke:var(--accent);stroke-width:4;fill-opacity:.85}
-#canvas.relating,#canvas.relating .node circle,#canvas.relating .edge line{cursor:crosshair}
+#canvas.relating,#canvas.relating .node circle,#canvas.relating .edge line,#canvas.relating .edge .pill{cursor:crosshair}

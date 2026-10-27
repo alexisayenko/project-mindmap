@@ -125,7 +125,8 @@ function refreshInfobox() {
   $('info-ends').hidden = !rel;
   for (const [k, n] of [['from', a], ['to', b]]) {
     const btn = $('info-' + k);
-    btn.textContent = n ? n.name : '?';
+    btn.textContent = n ? shown(n.name) : '?';
+    if (n && shown(n.name) !== n.name) btn.title = n.name; else btn.removeAttribute('title');
   }
 }
 
