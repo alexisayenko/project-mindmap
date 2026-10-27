@@ -14,6 +14,10 @@ const svg = document.getElementById('canvas');
 const world = document.createElementNS(NS, 'g');
 svg.appendChild(world);
 const K_MIN = 0.2, K_MAX = 4;
+const FOLLOW = { stiffness: 90, damping: 8, stepMs: 8, restDist: 0.02, restSpeed: 0.05 }; // spring feel of locked followers, same as audioplayer genres map v2
+const reducedMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const springs = new Map();
+let springRaf = 0, springLast = 0, springAcc = 0;
 const $ = id => document.getElementById(id);
 const ctx = document.createElement('canvas').getContext('2d');
 
@@ -104,6 +108,48 @@ function lockedGroup(seeds) {
     }
   }
   return out;
+}
+
+function snapSprings() {
+  for (const [id, sp] of springs) { const n = entity(id); if (n) { n.x = sp.tx; n.y = sp.ty; } }
+  springs.clear();
+  if (springRaf) { cancelAnimationFrame(springRaf); springRaf = 0; }
+  springLast = springAcc = 0;
+}
+
+function springFrame(now) {
+  springRaf = 0;
+  const dt = Math.min(100, springLast ? now - springLast : FOLLOW.stepMs);
+  springLast = now;
+  springAcc += dt;
+  const h = FOLLOW.stepMs / 1000;
+  while (springAcc >= FOLLOW.stepMs) {
+    springAcc -= FOLLOW.stepMs;
+    for (const [id, sp] of springs) {
+      if (!entity(id)) { springs.delete(id); continue; }
+      sp.vx += (FOLLOW.stiffness * (sp.tx - sp.x) - FOLLOW.damping * sp.vx) * h;
+      sp.vy += (FOLLOW.stiffness * (sp.ty - sp.y) - FOLLOW.damping * sp.vy) * h;
+      sp.x += sp.vx * h; sp.y += sp.vy * h;
+    }
+  }
+  let rested = false;
+  for (const [id, sp] of springs) {
+    const n = entity(id);
+    if (!n) { springs.delete(id); continue; }
+    n.x = sp.x; n.y = sp.y;
+    if (Math.hypot(sp.tx - sp.x, sp.ty - sp.y) < FOLLOW.restDist && Math.hypot(sp.vx, sp.vy) < FOLLOW.restSpeed) {
+      n.x = sp.tx; n.y = sp.ty;
+      springs.delete(id);
+      rested = true;
+    }
+  }
+  render();
+  if (springs.size) springRaf = requestAnimationFrame(springFrame);
+  else { springLast = springAcc = 0; if (rested) save(); }
+}
+
+function startSprings() {
+  if (!springRaf && springs.size) springRaf = requestAnimationFrame(springFrame);
 }
 
 function el(name, attrs, parent) {
@@ -478,6 +524,7 @@ svg.addEventListener('pointerdown', ev => {
   }
   if (ev.button > 0 || ev.target.closest('.plus')) return;
   finishEdit(false);
+  if (springs.size) { snapSprings(); save(); }
   const target = ev.target.closest('[data-id]');
   const id = target ? target.dataset.id : null;
   const e = id && entity(id);
@@ -496,7 +543,7 @@ svg.addEventListener('pointerdown', ev => {
   const seeds = e ? model.entities.filter(n => activated.has(n.id)).map(n => n.id) : [];
   if (e && !seeds.includes(id)) seeds.push(id);
   const moving = lockedGroup(seeds);
-  const group = e ? model.entities.filter(n => moving.has(n.id)).map(n => ({ n, dx: n.x - start.x, dy: n.y - start.y })) : [];
+  const group = e ? model.entities.filter(n => moving.has(n.id)).map(n => ({ n, dx: n.x - start.x, dy: n.y - start.y, follower: !seeds.includes(n.id) })) : [];
   const drag = e ? { moved: false } : null;
   const pan = !id ? { moved: false } : null;
   const rect = marquee ? el('rect', { class: 'marquee' }, svg) : null;
@@ -524,8 +571,17 @@ svg.addEventListener('pointerdown', ev => {
     const p = point(m);
     if (!drag.moved && Math.hypot(s.x - sStart.x, s.y - sStart.y) < 4) return;
     drag.moved = true;
-    for (const g of group) { g.n.x = p.x + g.dx; g.n.y = p.y + g.dy; }
+    const lively = !reducedMotion();
+    for (const g of group) {
+      const tx = p.x + g.dx, ty = p.y + g.dy;
+      if (lively && g.follower) {
+        let sp = springs.get(g.n.id);
+        if (!sp) springs.set(g.n.id, sp = { x: g.n.x, y: g.n.y, vx: 0, vy: 0 });
+        sp.tx = tx; sp.ty = ty;
+      } else { g.n.x = tx; g.n.y = ty; }
+    }
     render();
+    startSprings();
   };
   const up = u => {
     window.removeEventListener('pointermove', move);
@@ -540,6 +596,15 @@ svg.addEventListener('pointerdown', ev => {
       activated = new Set(model.entities.filter(n => n.x >= x1 && n.x <= x2 && n.y >= y1 && n.y <= y2).map(n => n.id));
       for (const r of model.relations) if (activated.has(r.from) && activated.has(r.to)) activated.add(r.id);
       render();
+      return;
+    }
+    if (drag && drag.moved && springs.size) {
+      const cur = [...springs].map(([id, sp]) => [entity(id), sp]).filter(([n]) => n);
+      const was = cur.map(([n]) => [n.x, n.y]);
+      for (const [n, sp] of cur) { n.x = sp.tx; n.y = sp.ty; }
+      save();
+      cur.forEach(([n], i) => { n.x = was[i][0]; n.y = was[i][1]; });
+      lastTap.t = 0;
       return;
     }
     if ((drag && drag.moved) || (pan && pan.moved)) { save(); lastTap.t = 0; return; }
