@@ -5,7 +5,7 @@ const FONT = '16px system-ui, sans-serif';
 const LABEL_FONT = '14px system-ui, sans-serif';
 const DIRS = ['none', 'backward', 'forward', 'both'];
 const ARROW_L = 12, ARROW_W = 5;
-const ZOOM_MODE = 'constant'; // 'constant': radius and text ~k^0.25 clamped; 'geometric': radius x k, text constant screen size
+const ZOOM_MODE = 'geometric'; // 'geometric': radius x k, text constant screen size; 'constant': radius and text ~k^0.25 clamped
 const SIZE_EXP = 0.25, SIZE_MIN = 0.8, SIZE_MAX = 1.4;
 const LOD_NAMES = 0.45, LOD_DESC = 1.8;
 const DESC_CHARS = 60, DESC_LINE = 20, DESC_FONT = 11;

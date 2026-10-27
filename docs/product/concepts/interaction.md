@@ -18,4 +18,4 @@ Vocabulary for how the user points at things on the canvas.
 
 In code the activated set is `activated` and the CSS class is `.activated`.
 
-**Semantic zoom.** Distances scale with zoom; circle size and text stay near constant screen size (`k^0.25`, clamped 0.8x-1.4x), strokes, arrowheads and `+` constant. Below k=0.45 only circles and lines show; from 0.45 names and relation labels; from 1.8 also a short description snippet under the circle. See task-0007.
+**Semantic zoom.** Default mode is geometric: distances and circle radius scale with zoom `k`, text stays a constant screen size, strokes, arrowheads and `+` constant. A `'constant'` mode (circle size and text near constant, `k^0.25` clamped 0.8x-1.4x) stays available via `ZOOM_MODE`. Below k=0.45 only circles and lines show; from 0.45 names and relation labels; from 1.8 also a short description snippet under the circle. See task-0007.
