@@ -86,7 +86,7 @@ function render() {
     const r = radius(e) * Math.SQRT1_2;
     const p = el('g', { class: 'plus', 'data-x': e.x + r, 'data-y': e.y + r, tabindex: 0, role: 'button', 'aria-label': 'Add relation from ' + e.name }, g);
     el('circle', { r: 10 }, p);
-    el('text', {}, p).textContent = '+';
+    el('path', { class: 'glyph', d: 'M-5 0H5M0 -5V5' }, p);
   }
   if (relFrom && !entity(relFrom)) relFrom = null;
   if (relFrom) el('line', { class: 'relline', 'data-from': relFrom, x1: 0, y1: 0, x2: 0, y2: 0 }, world);
@@ -109,7 +109,7 @@ function refreshInfobox() {
   const fresh = box.dataset.id !== id;
   box.dataset.id = id;
   $('info-type').textContent = e ? 'Concept' : 'Relation';
-  if (fresh || document.activeElement !== $('info-name')) $('info-name').value = item.name || '';
+  if (fresh || document.activeElement !== $('info-name')) $('info-name').textContent = item.name || '';
   $('info-name').setAttribute('aria-label', e ? 'Concept name' : 'Relation name');
   $('info-text').hidden = !e;
   if (e && (fresh || document.activeElement !== $('info-text'))) $('info-text').value = e.description || '';
@@ -208,33 +208,64 @@ function removeActivated() {
 }
 
 const LBL_LIFT = 15;
-const NO_AUTOFILL = {
-  autocomplete: 'off', autocorrect: 'off', autocapitalize: 'off', spellcheck: 'false',
-  'data-lpignore': 'true', 'data-1p-ignore': '', 'data-form-type': 'other',
-};
-function noAutofill(el, name) {
-  el.name = name;
-  for (const k in NO_AUTOFILL) el.setAttribute(k, NO_AUTOFILL[k]);
+const PLAIN = (() => {
+  const d = document.createElement('div');
+  d.setAttribute('contenteditable', 'plaintext-only');
+  return d.contentEditable === 'plaintext-only';
+})();
+const oneLine = t => t.replace(/[\r\n]+/g, ' ');
+function makeTextbox(el, label) {
+  el.setAttribute('contenteditable', PLAIN ? 'plaintext-only' : 'true');
+  el.setAttribute('role', 'textbox');
+  el.setAttribute('aria-label', label);
+  el.setAttribute('spellcheck', 'false');
+  el.addEventListener('beforeinput', ev => {
+    if (ev.inputType === 'insertParagraph' || ev.inputType === 'insertLineBreak') ev.preventDefault();
+  });
+  el.addEventListener('paste', ev => {
+    ev.preventDefault();
+    const t = oneLine((ev.clipboardData || window.clipboardData).getData('text'));
+    if (!document.execCommand('insertText', false, t)) el.textContent += t;
+    el.dispatchEvent(new Event('input'));
+  });
+  el.addEventListener('input', () => {
+    if (el.children.length || /[\r\n]/.test(el.textContent)) {
+      el.textContent = oneLine(el.textContent);
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      r.collapse(false);
+      const s = getSelection();
+      s.removeAllRanges();
+      s.addRange(r);
+    }
+  });
 }
+function selectAllText(el) {
+  const r = document.createRange();
+  r.selectNodeContents(el);
+  const s = getSelection();
+  s.removeAllRanges();
+  s.addRange(r);
+}
+const textOf = el => oneLine(el.textContent);
 
 function startEdit(e, isNew) {
   finishEdit(true);
-  const input = document.createElement('input');
+  const input = document.createElement('div');
   input.id = 'edit';
-  noAutofill(input, e.from ? 'mm-relation-label' : 'mm-concept-label');
-  input.value = e.name || '';
-  input.setAttribute('aria-label', e.from ? 'Relation name' : 'Concept name');
+  makeTextbox(input, e.from ? 'Relation name' : 'Concept name');
+  input.textContent = e.name || '';
   document.body.appendChild(input);
   editing = { e, input, isNew, done: false };
   placeEditor();
   input.addEventListener('keydown', ev => {
-    if (ev.key === 'Enter') finishEdit(false);
+    if (ev.key === 'Enter') { ev.preventDefault(); finishEdit(false); }
     else if (ev.key === 'Escape') finishEdit(true);
     ev.stopPropagation();
   });
   input.addEventListener('blur', () => finishEdit(false));
   input.focus();
-  input.select();
+  selectAllText(input);
 }
 
 function finishEdit(cancel) {
@@ -242,14 +273,14 @@ function finishEdit(cancel) {
   const { e, input } = editing;
   editing.done = true;
   editing = null;
-  const name = input.value.trim();
+  const name = textOf(input).trim();
   if (!cancel && (name || e.from)) e.name = name;
   input.remove();
   changed();
 }
 
-noAutofill($('info-name'), 'mm-infobox-name');
-noAutofill($('info-text'), 'mm-concept-description');
+makeTextbox($('info-name'), 'Concept name');
+$('info-name').addEventListener('keydown', ev => { if (ev.key === 'Enter') ev.preventDefault(); });
 function infoItem() {
   const id = $('infobox').dataset.id;
   return entity(id) || model.relations.find(x => x.id === id);
@@ -257,12 +288,12 @@ function infoItem() {
 $('info-name').addEventListener('input', () => {
   const it = infoItem();
   if (!it) return;
-  it.name = $('info-name').value;
+  it.name = textOf($('info-name'));
   changed();
 });
 $('info-name').addEventListener('blur', () => {
   const it = infoItem();
-  if (it && !it.from && !it.name.trim()) { it.name = DEFAULT_NAME; $('info-name').value = it.name; changed(); }
+  if (it && !it.from && !it.name.trim()) { it.name = DEFAULT_NAME; $('info-name').textContent = it.name; changed(); }
 });
 $('info-text').addEventListener('input', () => {
   const it = infoItem();
@@ -393,8 +424,8 @@ window.addEventListener('keydown', ev => {
     if (activated.size) { activated = new Set(); render(); }
     return;
   }
-  if (ev.target.closest('input, button, textarea')) {
-    if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA') return;
+  if (ev.target.closest('input, button, textarea, [contenteditable]')) {
+    if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA' || ev.target.isContentEditable) return;
     if (ev.key !== 'Delete' && ev.key !== 'Backspace') return;
   }
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'a') {
