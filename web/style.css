@@ -62,3 +62,8 @@ html.marquee,html.marquee *{cursor:crosshair!important}
 #dir-menu button:hover{background:var(--fill)}
 #dir-menu button[aria-selected="true"]{border-color:var(--accent);color:var(--accent);background:var(--fill)}
 .node .desc{fill:var(--muted);text-anchor:middle;pointer-events:none}
+
+#info-lock{padding:2px 6px;line-height:0;cursor:pointer;vertical-align:middle;margin-left:6px}
+#info-lock svg{display:block}
+.edge .locksign{color:var(--muted);pointer-events:none}
+.edge.activated .locksign{color:var(--accent)}

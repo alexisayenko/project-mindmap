@@ -34,6 +34,7 @@ function load() {
       for (const r of m.relations) {
         if (typeof r.name !== 'string') r.name = '';
         if (!DIRS.includes(r.dir)) r.dir = 'none';
+        r.locked = r.locked === true;
       }
       return m;
     }
@@ -74,6 +75,37 @@ function snippet(text) {
   return lines;
 }
 
+function lockIcon(locked, size) {
+  const s = document.createElementNS(NS, 'svg');
+  s.setAttribute('viewBox', '0 0 16 16');
+  s.setAttribute('width', size);
+  s.setAttribute('height', size);
+  s.setAttribute('aria-hidden', 'true');
+  s.appendChild(lockShapes(locked));
+  return s;
+}
+function lockShapes(locked) {
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('class', 'lockshape');
+  el('path', { d: locked ? 'M5 7V5a3 3 0 0 1 6 0v2' : 'M5 7V5a3 3 0 0 1 5.6-1.5', fill: 'none', stroke: 'currentColor', 'stroke-width': 1.6, 'stroke-linecap': 'round' }, g);
+  el('rect', { x: 3, y: 7, width: 10, height: 7, rx: 1.5, fill: 'currentColor' }, g);
+  return g;
+}
+
+function lockedGroup(seeds) {
+  const out = new Set(seeds);
+  const queue = [...seeds];
+  while (queue.length) {
+    const id = queue.pop();
+    for (const r of model.relations) {
+      if (!r.locked) continue;
+      const o = r.from === id ? r.to : r.to === id ? r.from : null;
+      if (o && !out.has(o) && entity(o)) { out.add(o); queue.push(o); }
+    }
+  }
+  return out;
+}
+
 function el(name, attrs, parent) {
   const n = document.createElementNS(NS, name);
   for (const k in attrs) n.setAttribute(k, attrs[k]);
@@ -102,6 +134,11 @@ function render() {
     const head = (x, y, sx, sy) => el('path', { class: 'arrow', d: `M${x} ${y}L${x - (sx * ARROW_L + sy * ARROW_W) * A} ${y - (sy * ARROW_L - sx * ARROW_W) * A}L${x - (sx * ARROW_L - sy * ARROW_W) * A} ${y - (sy * ARROW_L + sx * ARROW_W) * A}Z` }, g);
     if (toB) head(p[2], p[3], ux, uy);
     if (toA) head(p[0], p[1], -ux, -uy);
+    if (r.locked) {
+      const mx = (p[0] + p[2]) / 2, my = (p[1] + p[3]) / 2;
+      const l = el('g', { class: 'locksign', transform: `translate(${mx} ${my}) scale(${Z}) translate(-6 5) scale(0.75)` }, g);
+      l.appendChild(lockShapes(true));
+    }
     if (showNames && r.name && !(editing && editing.e === r)) {
       ctx.font = LABEL_FONT;
       const w = ctx.measureText(r.name).width + 12, mx = (p[0] + p[2]) / 2, my = (p[1] + p[3]) / 2;
@@ -154,7 +191,14 @@ function refreshInfobox() {
   if (e && (fresh || document.activeElement !== $('info-text'))) $('info-text').value = e.description || '';
   const a = rel && entity(rel.from), b = rel && entity(rel.to);
   $('info-ends').hidden = !rel;
-  if (rel) $('info-dir').replaceChildren(dirIcon(rel.dir || 'none'));
+  if (rel) {
+    $('info-dir').replaceChildren(dirIcon(rel.dir || 'none'));
+    const lk = $('info-lock');
+    lk.replaceChildren(lockIcon(!!rel.locked, 16));
+    lk.title = rel.locked ? 'Unlock' : 'Lock';
+    lk.setAttribute('aria-label', lk.title);
+    lk.setAttribute('aria-pressed', String(!!rel.locked));
+  }
   if (!rel) closeDirMenu();
   for (const [k, n] of [['from', a], ['to', b]]) {
     const btn = $('info-' + k);
@@ -201,6 +245,10 @@ function openDirMenu() {
 $('info-dir').addEventListener('click', ev => {
   ev.stopPropagation();
   if ($('dir-menu').hidden) openDirMenu(); else closeDirMenu();
+});
+$('info-lock').addEventListener('click', () => {
+  const rel = model.relations.find(x => x.id === $('infobox').dataset.id);
+  if (rel) { rel.locked = !rel.locked; changed(); }
 });
 $('dir-menu').addEventListener('click', ev => {
   const o = ev.target.closest('[data-dir]');
@@ -288,7 +336,7 @@ function zoomCentre(f) {
 function addRelation(from, to) {
   if (from === to) return;
   if (model.relations.some(r => (r.from === from && r.to === to) || (r.from === to && r.to === from))) return;
-  model.relations.push({ id: uid(), from, to, name: '', dir: 'none' });
+  model.relations.push({ id: uid(), from, to, name: '', dir: 'none', locked: false });
 }
 
 function removeActivated() {
@@ -445,7 +493,10 @@ svg.addEventListener('pointerdown', ev => {
   render();
 
   const sStart = screenPoint(ev), v0 = { ...model.view };
-  const group = e ? model.entities.filter(n => activated.has(n.id)).map(n => ({ n, dx: n.x - start.x, dy: n.y - start.y })) : [];
+  const seeds = e ? model.entities.filter(n => activated.has(n.id)).map(n => n.id) : [];
+  if (e && !seeds.includes(id)) seeds.push(id);
+  const moving = lockedGroup(seeds);
+  const group = e ? model.entities.filter(n => moving.has(n.id)).map(n => ({ n, dx: n.x - start.x, dy: n.y - start.y })) : [];
   const drag = e ? { moved: false } : null;
   const pan = !id ? { moved: false } : null;
   const rect = marquee ? el('rect', { class: 'marquee' }, svg) : null;

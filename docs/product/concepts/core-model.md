@@ -28,9 +28,12 @@ layers and not all shown at once (semantic zoom / drill-down, like
 C4 levels). Each circle therefore has a level coordinate, which
 makes a later 3D graph of all relations possible.
 
+## Relation lock
+
+A relation has `locked` (boolean, default false). Dragging a circle moves everything connected to it through locked relations, rigidly, with offsets kept. Unlocked relations do not move anything.
+
 ## Open points
 
-- Lock / unlock relations: locked, moving a parent moves its
-  children; unlocked, it does not. Undecided.
+- Lock / unlock relations: decided, see [task-0008](../../tasks/task-0008.md).
 - Visual nesting (circle inside a region) versus semantic nesting
   (circle expands into a layer): the same thing or not?
