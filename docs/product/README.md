@@ -9,6 +9,7 @@ the speed.
 Purpose: build a concept map / knowledge graph quickly, then go
 deeper layer by layer. Core model:
 [concepts/core-model.md](concepts/core-model.md).
+Philosophy (Alex's notes): [philosophy.md](philosophy.md).
 
 For the wider docs/ map and what-lives-where, see
 [`../README.md`](../README.md).
@@ -21,6 +22,7 @@ The product subtree (full docs tree in
 ```text
 product/
 ├── README.md      # this file — core idea + product-section glossary
+├── philosophy.md  # Alex's philosophy notes, in his words
 ├── concepts/      # one file per domain noun — entry: concepts/README.md
 └── features/      # one file per product capability — entry: features/README.md
 ```
