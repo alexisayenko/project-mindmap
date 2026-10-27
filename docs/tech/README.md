@@ -44,3 +44,5 @@ None yet.
 
 - Stack and hosting.
 - Reuse of Electrophone's genres map v2 (see the root README).
+
+Hosting: Cloudflare Workers static assets (`web/`), domain mindmap.isayenko.net, manual deploy via `npm run deploy`.

@@ -61,3 +61,4 @@ Task-file updates ship with the work they describe
 - [docs/product/concepts/core-model.md](docs/product/concepts/core-model.md) - entities, relations, regions, levels
 - [docs/tasks/task-0001.md](docs/tasks/task-0001.md) - concept and data model
 - [docs/tech/ci-cd.md](docs/tech/ci-cd.md) - CI/CD playbook (template, unfilled)
+- Hosting: Cloudflare Workers static assets, `mindmap.isayenko.net`, manual deploy (Node v26 on PATH, source `~/.config/cloudflare/token.env`, `npx wrangler deploy`; no GitHub Actions).

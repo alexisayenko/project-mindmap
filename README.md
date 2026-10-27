@@ -5,8 +5,9 @@ is a mindmap + diagram tool for quickly building ontology maps
 (concept maps, knowledge graphs): entities and the relations
 between them.
 
-**Status: idea / pre-start.** No code yet. Stack, hosting and
-monetization are not decided.
+**Status: idea / pre-start.** No code yet. Hosting: Cloudflare Workers static assets
+(`web/`, `wrangler.jsonc`), domain mindmap.isayenko.net, manual deploy
+(`npm run deploy`). Stack and monetization are not decided.
 
 ## Concept
 
