@@ -40,18 +40,9 @@ against it.
 
 ---
 
-## C1 — [TODO: concern name]
+## C1 - Concept and model
 
-[TODO: 1-3 sentences — what work falls under this slice. What it
-spans across sections.]
+Defining entities, relations, regions and levels before code.
 
-- Lives in: [TODO: paths where this work shows up — e.g.
-  `web/`, `data/`, `scripts/`]
-- Source spec: [TODO: link to the relevant section/file]
-
-## C2 — [TODO: concern name]
-
-[TODO: …]
-
-- Lives in: [TODO]
-- Source spec: [TODO]
+- Lives in: `docs/product/concepts/`
+- Source spec: [core-model.md](product/concepts/core-model.md)

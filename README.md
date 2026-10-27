@@ -1,31 +1,75 @@
-# project-template
+# project-mindmap
 
-Seed repo for new projects. Defines a standard folder layout,
-naming rules, and docs subtree. Copy on init; not used as a
-runtime dependency.
+**mindgram** (domain `mindgram.cc`; working repo name `project-mindmap`)
+is a mindmap + diagram tool for quickly building ontology maps
+(concept maps, knowledge graphs): entities and the relations
+between them.
 
-## Overview
+**Status: idea / pre-start.** No code yet. Stack, hosting and
+monetization are not decided.
 
-This template assumes **one product, delivered through one or
-more top-level code folders** at the repo root. Each folder is a
-deployment target — name it by what it is (`mobile/`, `web/`,
-`workers/`, `marketing-site/`, etc.). Avoid generic names like
-`app/` that don't say which one.
+## Concept
 
-Multi-product is rare; see
-[`docs/README.md`](docs/README.md#multi-product-split) for the
-split path if/when it happens.
+Terms are entities, drawn as circles. Circles connect to circles;
+a connection is a relation (line, arrow, dashed, different
+colours). Rectangular regions hold circles with their children.
+Z levels let the map go deeper or up, so details are split into
+layers and not all shown at once (semantic zoom / drill-down, like
+C4 levels). Later, a 3D graph of all relations, since each circle
+has a level coordinate.
 
-## Quick start
+## Core model
 
-1. Click **Use this template** on GitHub (or `git clone` and
-   remove `.git/` to start fresh).
-2. Replace this Overview and Quick start with content for the
-   new project.
-3. Keep the [Structure](#structure) section — that's the
-   canonical convention.
-4. Fill in [`docs/README.md`](docs/README.md) with the project's
-   product and docs subtree.
+- **Entity** - a term, drawn as a circle; the main way of
+  categorising.
+- **Relation** - a connection between two entities; kind shown by
+  line style, arrow and colour.
+- **Region** - a rectangle that holds circles with their children.
+- **Level** - a Z layer; entities can be opened into a deeper
+  layer, and the user goes down or up.
+
+Details and open points: [docs/product/concepts/core-model.md](docs/product/concepts/core-model.md).
+
+## Planned features
+
+- Fast creation of circles and relations (the "quickly" in the goal)
+- Relation styles: line, arrow, dashed, colours
+- Regions around circles and their children
+- Level navigation (drill down / up)
+- Lock / unlock of relations (see open questions)
+- Later: 3D graph of all relations
+
+## Open questions
+
+- Lock / unlock: locked means moving a parent moves its children;
+  unlocked means it does not. Undecided.
+- Is visual nesting (circle inside a region) the same thing as
+  semantic nesting (circle expands into a layer)?
+- Not decided: stack, hosting, monetization.
+
+## Relation to Electrophone's genres diagram
+
+The technical base is the genres map v2 of Electrophone (repo
+`project-audioplayer`), screen `#/genres2`, spec
+`docs/specs/genres.md` (GEN-097 .. GEN-111). Its code lives in
+`/data/alex/project-audioplayer/web/js/`, vanilla JS, no external
+graph library:
+
+- `genres-rework.js` - the screen that mounts the views
+- `genre-force-view.js` + `genre-sim.js` - force-directed graph on a
+  canvas (own simulation: springs, Barnes-Hut repulsion, collision)
+- `genre-radial.js` + `genre-radial-view.js` - radial node-link layout
+- `genre-layout-store.js`, `genre-layout-io.js` - per-user saved
+  circle positions, layout import / export
+- `genre-drill.js`, `genre-levels.js` - drill-down and level
+  hierarchy
+- `genres-v2-adapter.js` - maps the v2 data to what the map reads
+
+What carries over and what is rewritten is for
+[task-0001](docs/tasks/task-0001.md) and later tasks to settle.
+
+Source of the idea: `ideas.md` (entry `mindgram`, 2026-10-25) in
+`project-meta`.
 
 ## Structure
 

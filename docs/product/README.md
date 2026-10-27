@@ -1,10 +1,14 @@
 # Product
 
-[TODO: one paragraph — the product's core idea, the mechanic, the
-value to the user. State the load-bearing tension in plain terms.]
+mindgram is a mindmap + diagram tool for quickly building ontology
+maps: entities as circles, relations as styled connections, regions
+and Z levels for structure. The tension: a free canvas is fast to
+draw on, but a large ontology needs layers, so levels must not cost
+the speed.
 
-[TODO: one line — purpose. What this product enables that wasn't
-possible (or wasn't easy) before.]
+Purpose: build a concept map / knowledge graph quickly, then go
+deeper layer by layer. Core model:
+[concepts/core-model.md](concepts/core-model.md).
 
 For the wider docs/ map and what-lives-where, see
 [`../README.md`](../README.md).
@@ -73,7 +77,4 @@ technically could. Externally-imposed obligations (licensing,
 compliance, attribution) live in
 [`../business/compliance.md`](../business/compliance.md), not here.
 
-- **[TODO: load-bearing constraint — e.g. "free X, paid Y", "no
-  live data", "single-user only" — the tension that shapes
-  feature scope]**
-- **[TODO: secondary constraint, or remove this bullet if none]**
+- None decided yet (pre-start).

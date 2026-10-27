@@ -29,7 +29,7 @@ owns identity / spirit; the style guide operationalizes it.
 
 ## Current state
 
-- **Name**: [TODO: working / locked + the name + rationale.]
+- **Name**: working. Product name mindgram, repo name project-mindmap.
 - **Visual direction**: [TODO: 1-2 lines — minimal, ornate,
   themed-after-something, etc.]
   - **Palette**: [TODO: list of colors / hex values, or
@@ -38,8 +38,7 @@ owns identity / spirit; the style guide operationalizes it.
   - **Typography**: [TODO: serif / sans / mono / handwritten +
     any specific typefaces in use.]
   - **Mark**: [TODO: pictorial / abstract / letterform direction.]
-- **Domain**: [TODO: registered domains + provider + dates +
-  which is primary vs defensive.]
+- **Domain**: mindgram.cc (planned primary; registration status not recorded).
 - **Wordmark / logo**: [TODO: TBD or describe the lockup.]
 
 ## Where applications live

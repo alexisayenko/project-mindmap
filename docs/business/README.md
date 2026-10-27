@@ -9,34 +9,28 @@ work-area axes (C1, C2, …), see [`../concerns.md`](../concerns.md).
 
 ## Audience
 
-[TODO: who this product is for. Primary audience explicitly; any
-groups who are incidental / not designed for.]
+Not decided. Anyone who builds concept maps / ontologies.
 
 ## Scope (v1)
 
-[TODO: what's in v1 — concrete numbers / boundaries where they
-exist. What's deliberately deferred to v2+.]
+Not decided. 3D graph of all relations is deferred (later).
 
 ## Monetization
 
-- **Model**: [TODO: one-time purchase / subscription / freemium
-  / ad-supported / donation / none.]
-- **Free tier**: [TODO: what's in the free tier — or "n/a".]
-- **Paid tier**: [TODO: what gates the paid tier — features,
-  capacity, support — or "n/a".]
-- **Price**: [TODO: price point + currency, or "TBD pending
-  market research".]
+- **Model**: not decided.
+- **Free tier**: not decided.
+- **Paid tier**: not decided.
+- **Price**: TBD.
 
 ## Non-goals (v1)
 
 Things deliberately out of scope. Each line defends an absence.
 
-- [TODO: e.g. "no subscriptions / recurring revenue".]
-- [TODO: e.g. "no community features (comments, ratings, UGC)".]
+- None decided yet.
 
 ## Open questions
 
-- [TODO: open business decisions awaiting resolution.]
+- Monetization, hosting costs, audience.
 
 ## Resolved
 
@@ -44,8 +38,7 @@ Historical decisions with dates — load-bearing for understanding
 why the current shape is what it is. Don't delete; the trail is
 the audit.
 
-- **[TODO: decision title]** ([TODO: YYYY-MM-DD]):
-  [TODO: what was decided and why.]
+- None yet.
 
 ## File layout
 

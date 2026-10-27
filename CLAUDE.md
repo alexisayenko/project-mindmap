@@ -3,33 +3,44 @@
 Fast-path context for Claude Code. Full human-oriented docs:
 [docs/](docs/). `AGENTS.md` mirrors this file; both are kept in step.
 
-## Key principle
+## Purpose
 
-> [TODO: one-line principle that governs every product decision]
+> Help build ontology maps. Terms are circles; circles connect to
+> other circles, and the connections are the relations.
 
-[TODO: one paragraph elaborating how this principle applies — what
-decisions are weighed against it, what gets cut when it doesn't
-reinforce the principle.]
+Source: Alex's mindgram entry in `project-meta/ideas.md`. Nothing
+is decided beyond it; the first product decisions are open
+([docs/tasks/task-0001.md](docs/tasks/task-0001.md)).
 
 ## Product
 
-[TODO: one paragraph — what it is, who uses it, mechanic,
-monetization.]
+mindgram (repo `project-mindmap`, domain mindgram.cc) is a mindmap +
+diagram tool for ontology maps (concept map / knowledge graph).
+Entities are circles, relations are styled connections between
+them, regions are rectangles that hold circles with their children,
+and Z levels give drill-down into deeper layers. A 3D graph of all
+relations is a later idea. Status: idea / pre-start, no code.
+Monetization not decided. Core model:
+[docs/product/concepts/core-model.md](docs/product/concepts/core-model.md).
 
 ## Tech stack
 
-[TODO: one paragraph — stack, deploy targets, current status.]
+Not decided (stack, hosting). Technical base to reuse: the genres
+map v2 of Electrophone in `/data/alex/project-audioplayer/web/js/`
+(`genres-rework.js`, `genre-force-view.js`, `genre-sim.js`,
+`genre-radial*.js`, `genre-layout-store.js`, `genre-drill.js`;
+vanilla JS, canvas, own force simulation). No code in this repo yet.
+CI and deploy are manual; nothing runs on push.
 
 ## Working in a shared checkout
 
-[TODO: delete if only one session ever works in this checkout.]
 Several sessions may work in this one checkout at once:
 
 - Run `git status` first; files already modified or untracked belong
-  to other work — never edit, stage or commit them.
+  to other work - never edit, stage or commit them.
 - Stage explicit paths only (`git add <file>`), never `git add -A`
   or `git add .`.
-- Never `git stash pop` / `apply` blindly — an old, unrelated stash
+- Never `git stash pop` / `apply` blindly - an old, unrelated stash
   may sit in the list.
 
 ## Docs change with code
@@ -40,12 +51,13 @@ Task-file updates ship with the work they describe
 
 ## Repo
 
-[TODO: `[owner/repo](https://github.com/owner/repo)` (private/public).
-Auth notes if any (HTTPS, fine-grained PAT, etc.).]
+[alexisayenko/project-mindmap](https://github.com/alexisayenko/project-mindmap)
+(SSH). Never commit or push unless asked.
 
 ## Where to look for more
 
-- [README.md](README.md) — repo entry point + structure
-- [docs/README.md](docs/README.md) — docs subtree map
-- [docs/tech/ci-cd.md](docs/tech/ci-cd.md) — CI/CD playbook
-- [TODO: add project-specific docs as they land]
+- [README.md](README.md) - repo entry point + structure
+- [docs/README.md](docs/README.md) - docs subtree map
+- [docs/product/concepts/core-model.md](docs/product/concepts/core-model.md) - entities, relations, regions, levels
+- [docs/tasks/task-0001.md](docs/tasks/task-0001.md) - concept and data model
+- [docs/tech/ci-cd.md](docs/tech/ci-cd.md) - CI/CD playbook (template, unfilled)

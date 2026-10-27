@@ -33,15 +33,14 @@ Don't pre-create — extract on first real entry. See
 
 ## Deploy and CI
 
-[TODO: one row per environment or pipeline — how it is deployed,
-which workflow, where secrets live. Playbook:
-[`ci-cd.md`](ci-cd.md).]
+None yet; deploy will be manual. Playbook template:
+[`ci-cd.md`](ci-cd.md).
 
 ## Known gaps
 
-[TODO: shortcuts taken on purpose and risks accepted, each with
-the date and who accepted it.]
+None yet.
 
 ## Open questions
 
-- [TODO: architectural decisions still open.]
+- Stack and hosting.
+- Reuse of Electrophone's genres map v2 (see the root README).

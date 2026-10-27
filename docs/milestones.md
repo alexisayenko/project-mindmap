@@ -14,5 +14,5 @@ One bullet per event: ISO date, an em dash, what happened in a
 sentence or two, and a link to the task or artifact that carries
 the detail. Newest first; several events on one date are fine.
 
-- [TODO: YYYY-MM-DD] — [TODO: one-line summary; link to the task,
-  artifact, post, or release].
+- 2026-10-27 - Repo created from project-template; initial
+  documentation written ([task-0001](tasks/task-0001.md)).
