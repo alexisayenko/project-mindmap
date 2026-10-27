@@ -3,6 +3,12 @@ const MAX_LABEL = 16;
 const DEFAULT_NAME = 'New concept';
 const FONT = '16px system-ui, sans-serif';
 const LABEL_FONT = '14px system-ui, sans-serif';
+const DIRS = ['none', 'backward', 'forward', 'both'];
+const ARROW_L = 12, ARROW_W = 5;
+const ZOOM_MODE = 'constant'; // 'constant': radius and text ~k^0.25 clamped; 'geometric': radius x k, text constant screen size
+const SIZE_EXP = 0.25, SIZE_MIN = 0.8, SIZE_MAX = 1.4;
+const LOD_NAMES = 0.45, LOD_DESC = 1.8;
+const DESC_CHARS = 60, DESC_LINE = 20, DESC_FONT = 11;
 const NS = 'http://www.w3.org/2000/svg';
 const svg = document.getElementById('canvas');
 const world = document.createElementNS(NS, 'g');
@@ -13,7 +19,6 @@ const ctx = document.createElement('canvas').getContext('2d');
 
 let model = load();
 let activated = new Set();
-let activateMode = false;
 let relFrom = null;
 let lastScreen = null;
 let editing = null;
@@ -26,7 +31,10 @@ function load() {
       const v = m.view;
       m.view = v && [v.x, v.y, v.k].every(Number.isFinite) && v.k >= K_MIN && v.k <= K_MAX ? { x: v.x, y: v.y, k: v.k } : { x: 0, y: 0, k: 1 };
       for (const e of m.entities) if (typeof e.description !== 'string') e.description = '';
-      for (const r of m.relations) if (typeof r.name !== 'string') r.name = '';
+      for (const r of m.relations) {
+        if (typeof r.name !== 'string') r.name = '';
+        if (!DIRS.includes(r.dir)) r.dir = 'none';
+      }
       return m;
     }
   } catch (e) {}
@@ -45,9 +53,25 @@ function shown(name) {
   return c.length > MAX_LABEL ? c.slice(0, MAX_LABEL - 1).join('') + '…' : name;
 }
 
+const sizeFactor = () => Math.min(SIZE_MAX, Math.max(SIZE_MIN, Math.pow(model.view.k, SIZE_EXP)));
+const zf = () => ZOOM_MODE === 'geometric' ? 1 : sizeFactor() / model.view.k;
+const tf = () => ZOOM_MODE === 'geometric' ? 1 / model.view.k : sizeFactor() / model.view.k;
+
 function radius(e) {
   ctx.font = FONT;
-  return Math.max(28, ctx.measureText(shown(e.name)).width / 2 + 14);
+  return Math.max(28, ctx.measureText(shown(e.name)).width / 2 + 14) * zf();
+}
+
+function snippet(text) {
+  const t = Array.from(text.replace(/\s+/g, ' ').trim());
+  const cut = t.length > DESC_CHARS ? t.slice(0, DESC_CHARS - 1).join('').trimEnd() + '…' : t.join('');
+  const lines = [];
+  let cur = '';
+  for (const w of cut.split(' ')) {
+    if (cur && Array.from(cur + ' ' + w).length > DESC_LINE) { lines.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w;
+  }
+  if (cur) lines.push(cur);
+  return lines;
 }
 
 function el(name, attrs, parent) {
@@ -60,6 +84,7 @@ function el(name, attrs, parent) {
 function render() {
   world.replaceChildren();
   applyView();
+  const Z = tf(), A = 1 / model.view.k, showNames = model.view.k >= LOD_NAMES, showDesc = model.view.k >= LOD_DESC;
   for (const r of model.relations) {
     const a = entity(r.from), b = entity(r.to);
     if (!a || !b) continue;
@@ -68,16 +93,22 @@ function render() {
     if (d <= ra + rb) continue;
     const g = el('g', { class: 'edge' + (activated.has(r.id) ? ' activated' : ''), 'data-id': r.id }, world);
     const p = [a.x + dx / d * ra, a.y + dy / d * ra, b.x - dx / d * rb, b.y - dy / d * rb];
+    const dir = r.dir || 'none', ux = dx / d, uy = dy / d;
+    const toB = dir === 'forward' || dir === 'both', toA = dir === 'backward' || dir === 'both';
+    const q = [p[0] + (toA ? ux * ARROW_L * A * 0.8 : 0), p[1] + (toA ? uy * ARROW_L * A * 0.8 : 0), p[2] - (toB ? ux * ARROW_L * A * 0.8 : 0), p[3] - (toB ? uy * ARROW_L * A * 0.8 : 0)];
     for (const cls of ['hit', '']) {
-      el('line', { class: cls, x1: p[0], y1: p[1], x2: p[2], y2: p[3] }, g);
+      el('line', { class: cls, x1: q[0], y1: q[1], x2: q[2], y2: q[3] }, g);
     }
-    if (r.name && !(editing && editing.e === r)) {
+    const head = (x, y, sx, sy) => el('path', { class: 'arrow', d: `M${x} ${y}L${x - (sx * ARROW_L + sy * ARROW_W) * A} ${y - (sy * ARROW_L - sx * ARROW_W) * A}L${x - (sx * ARROW_L - sy * ARROW_W) * A} ${y - (sy * ARROW_L + sx * ARROW_W) * A}Z` }, g);
+    if (toB) head(p[2], p[3], ux, uy);
+    if (toA) head(p[0], p[1], -ux, -uy);
+    if (showNames && r.name && !(editing && editing.e === r)) {
       ctx.font = LABEL_FONT;
       const w = ctx.measureText(r.name).width + 12, mx = (p[0] + p[2]) / 2, my = (p[1] + p[3]) / 2;
       let deg = Math.atan2(dy, dx) * 180 / Math.PI;
       if (deg > 90) deg -= 180;
       else if (deg <= -90) deg += 180;
-      const l = el('g', { class: 'lbl', transform: `translate(${mx} ${my}) rotate(${deg})` }, g);
+      const l = el('g', { class: 'lbl', transform: `translate(${mx} ${my}) rotate(${deg}) scale(${Z})` }, g);
       el('rect', { class: 'pill', x: -w / 2, y: -LBL_LIFT - 11, width: w, height: 22, rx: 11 }, l);
       el('text', { class: 'label', x: 0, y: -LBL_LIFT }, l).textContent = r.name;
     }
@@ -85,11 +116,15 @@ function render() {
   for (const e of model.entities) {
     const g = el('g', { class: 'node' + (activated.has(e.id) ? ' activated' : ''), 'data-id': e.id }, world);
     el('circle', { cx: e.x, cy: e.y, r: radius(e) }, g);
-    const t = el('text', { x: e.x, y: e.y }, g);
-    t.textContent = shown(e.name);
-    if (shown(e.name) !== e.name) el('title', {}, g).textContent = e.name;
+    const t = el('text', { x: e.x, y: e.y, style: `font-size:${16 * Z}px` }, g);
+    if (showNames) t.textContent = shown(e.name);
+    el('title', {}, g).textContent = e.name;
     if (relFrom === e.id) g.classList.add('src');
-    if (e.description) el('circle', { class: 'hasdesc', cx: e.x, cy: e.y + radius(e) - 7, r: 2.5 }, g);
+    if (e.description && showNames && showDesc) {
+      const lines = snippet(e.description), top = e.y + radius(e) + 14 * Z;
+      const d = el('text', { class: 'desc', x: e.x, y: top, style: `font-size:${DESC_FONT * Z}px` }, g);
+      lines.forEach((ln, i) => { const ts = el('tspan', { x: e.x, dy: i ? DESC_FONT * 1.25 * Z : 0 }, d); ts.textContent = ln; });
+    } else if (e.description) el('circle', { class: 'hasdesc', cx: e.x, cy: e.y + radius(e) - 7 * A, r: 2.5 * A }, g);
     if (relFrom || activated.size !== 1 || !activated.has(e.id)) continue;
     const r = radius(e) * Math.SQRT1_2;
     const p = el('g', { class: 'plus', 'data-x': e.x + r, 'data-y': e.y + r, tabindex: 0, role: 'button', 'aria-label': 'Add relation from ' + e.name }, g);
@@ -99,11 +134,7 @@ function render() {
   if (relFrom && !entity(relFrom)) relFrom = null;
   if (relFrom) el('line', { class: 'relline', 'data-from': relFrom, x1: 0, y1: 0, x2: 0, y2: 0 }, world);
   svg.classList.toggle('relating', !!relFrom);
-  const one = activated.size === 1 ? entity([...activated][0]) : null;
-  $('connect').disabled = !one && !relFrom;
-  $('connect').setAttribute('aria-pressed', String(!!relFrom));
   $('delete').disabled = !activated.size;
-  $('activate').setAttribute('aria-pressed', String(activateMode));
   refreshInfobox();
   applyView();
 }
@@ -123,12 +154,65 @@ function refreshInfobox() {
   if (e && (fresh || document.activeElement !== $('info-text'))) $('info-text').value = e.description || '';
   const a = rel && entity(rel.from), b = rel && entity(rel.to);
   $('info-ends').hidden = !rel;
+  if (rel) $('info-dir').replaceChildren(dirIcon(rel.dir || 'none'));
+  if (!rel) closeDirMenu();
   for (const [k, n] of [['from', a], ['to', b]]) {
     const btn = $('info-' + k);
     btn.textContent = n ? shown(n.name) : '?';
     if (n && shown(n.name) !== n.name) btn.title = n.name; else btn.removeAttribute('title');
   }
 }
+
+function dirIcon(dir) {
+  const s = document.createElementNS(NS, 'svg');
+  s.setAttribute('viewBox', '0 0 32 14');
+  s.setAttribute('width', '32');
+  s.setAttribute('height', '14');
+  s.setAttribute('aria-hidden', 'true');
+  const toB = dir === 'forward' || dir === 'both', toA = dir === 'backward' || dir === 'both';
+  el('line', { x1: toA ? 9 : 2, y1: 7, x2: toB ? 23 : 30, y2: 7, stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'butt' }, s);
+  if (toB) el('path', { d: 'M30 7L20 2L20 12Z', fill: 'currentColor' }, s);
+  if (toA) el('path', { d: 'M2 7L12 2L12 12Z', fill: 'currentColor' }, s);
+  return s;
+}
+const DIR_LABEL = { none: 'No direction', backward: 'To the first', forward: 'To the second', both: 'Both ways' };
+function closeDirMenu() {
+  $('dir-menu').hidden = true;
+  $('info-dir').setAttribute('aria-expanded', 'false');
+}
+function openDirMenu() {
+  const rel = model.relations.find(x => x.id === $('infobox').dataset.id);
+  if (!rel) return;
+  const menu = $('dir-menu');
+  menu.replaceChildren();
+  for (const v of DIRS) {
+    const o = document.createElement('button');
+    o.type = 'button';
+    o.setAttribute('role', 'option');
+    o.dataset.dir = v;
+    o.setAttribute('aria-label', DIR_LABEL[v]);
+    o.setAttribute('aria-selected', String(v === (rel.dir || 'none')));
+    o.appendChild(dirIcon(v));
+    menu.appendChild(o);
+  }
+  menu.hidden = false;
+  $('info-dir').setAttribute('aria-expanded', 'true');
+}
+$('info-dir').addEventListener('click', ev => {
+  ev.stopPropagation();
+  if ($('dir-menu').hidden) openDirMenu(); else closeDirMenu();
+});
+$('dir-menu').addEventListener('click', ev => {
+  const o = ev.target.closest('[data-dir]');
+  if (!o) return;
+  const rel = model.relations.find(x => x.id === $('infobox').dataset.id);
+  closeDirMenu();
+  $('info-dir').focus();
+  if (rel) { rel.dir = o.dataset.dir; changed(); }
+});
+document.addEventListener('pointerdown', ev => {
+  if (!$('dir-menu').hidden && !ev.target.closest('#dir-wrap')) closeDirMenu();
+}, true);
 
 function changed() { save(); render(); }
 
@@ -192,7 +276,7 @@ function zoomAt(sx, sy, k2) {
   v.k = k2;
   v.x = sx - wx * k2;
   v.y = sy - wy * k2;
-  applyView();
+  render();
   save();
 }
 
@@ -204,7 +288,7 @@ function zoomCentre(f) {
 function addRelation(from, to) {
   if (from === to) return;
   if (model.relations.some(r => (r.from === from && r.to === to) || (r.from === to && r.to === from))) return;
-  model.relations.push({ id: uid(), from, to, name: '' });
+  model.relations.push({ id: uid(), from, to, name: '', dir: 'none' });
 }
 
 function removeActivated() {
@@ -343,7 +427,7 @@ svg.addEventListener('pointerdown', ev => {
   const e = id && entity(id);
   const start = point(ev);
 
-  const marquee = !id && (ev.shiftKey || ev.ctrlKey || ev.altKey || ev.metaKey || activateMode);
+  const marquee = !id && (ev.shiftKey || ev.ctrlKey || ev.altKey || ev.metaKey);
   if (id && ev.shiftKey) {
     activated.has(id) ? activated.delete(id) : activated.add(id);
     render();
@@ -427,6 +511,7 @@ window.addEventListener('pointermove', ev => {
 });
 
 window.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && !$('dir-menu').hidden) { closeDirMenu(); $('info-dir').focus(); return; }
   if (ev.key === 'Escape' && relFrom) return cancelRelation();
   if (ev.key === 'Escape') {
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
@@ -445,10 +530,6 @@ window.addEventListener('keydown', ev => {
   if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); removeActivated(); }
 });
 
-$('connect').addEventListener('click', () => {
-  if (relFrom) return cancelRelation();
-  if (activated.size === 1) startRelation([...activated][0]);
-});
 $('delete').addEventListener('click', removeActivated);
 $('clear').addEventListener('click', () => {
   if (!confirm('Remove all concepts and relations?')) return;
@@ -457,7 +538,6 @@ $('clear').addEventListener('click', () => {
   relFrom = null;
   changed();
 });
-$('activate').addEventListener('click', () => { activateMode = !activateMode; render(); });
 $('export').addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob([JSON.stringify(model, null, 2)], { type: 'application/json' }));
   const a = document.createElement('a');
@@ -484,7 +564,7 @@ $('zoom-in').addEventListener('click', () => zoomCentre(1.25));
 $('zoom-out').addEventListener('click', () => zoomCentre(0.8));
 $('zoom-reset').addEventListener('click', () => {
   Object.assign(model.view, { x: 0, y: 0, k: 1 });
-  applyView();
+  render();
   save();
 });
 window.addEventListener('resize', placeEditor);

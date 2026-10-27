@@ -50,3 +50,15 @@ html.marquee,html.marquee *{cursor:crosshair!important}
 .relline{stroke:var(--accent);stroke-width:2;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;pointer-events:none}
 .node.src circle{stroke:var(--accent);stroke-width:4;fill-opacity:.85}
 #canvas.relating,#canvas.relating .node circle,#canvas.relating .edge line,#canvas.relating .edge .pill{cursor:crosshair}
+
+.edge .arrow{fill:var(--line);pointer-events:none}
+.edge.activated .arrow{fill:var(--accent)}
+#dir-wrap{position:relative;display:inline-block;vertical-align:middle}
+#info-dir{padding:2px 6px;line-height:0;cursor:pointer}
+#info-dir svg,#dir-menu svg{display:block}
+#dir-menu{position:absolute;top:100%;left:0;z-index:20;margin-top:4px;display:flex;flex-direction:column;gap:2px;padding:4px;background:var(--bar);border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 12px #0004}
+#dir-menu[hidden]{display:none}
+#dir-menu button{padding:4px 6px;line-height:0;border-color:transparent;background:transparent}
+#dir-menu button:hover{background:var(--fill)}
+#dir-menu button[aria-selected="true"]{border-color:var(--accent);color:var(--accent);background:var(--fill)}
+.node .desc{fill:var(--muted);text-anchor:middle;pointer-events:none}
