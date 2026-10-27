@@ -72,8 +72,8 @@ function render() {
       if (deg > 90) deg -= 180;
       else if (deg <= -90) deg += 180;
       const l = el('g', { class: 'lbl', transform: `translate(${mx} ${my}) rotate(${deg})` }, g);
-      el('rect', { class: 'pill', x: -w / 2, y: -11, width: w, height: 22, rx: 11 }, l);
-      el('text', { class: 'label', x: 0, y: 0 }, l).textContent = r.name;
+      el('rect', { class: 'pill', x: -w / 2, y: -LBL_LIFT - 11, width: w, height: 22, rx: 11 }, l);
+      el('text', { class: 'label', x: 0, y: -LBL_LIFT }, l).textContent = r.name;
     }
   }
   for (const e of model.entities) {
@@ -156,10 +156,21 @@ function removeSelected() {
   changed();
 }
 
+const LBL_LIFT = 15;
+const NO_AUTOFILL = {
+  autocomplete: 'off', autocorrect: 'off', autocapitalize: 'off', spellcheck: 'false',
+  'data-lpignore': 'true', 'data-1p-ignore': '', 'data-form-type': 'other',
+};
+function noAutofill(el, name) {
+  el.name = name;
+  for (const k in NO_AUTOFILL) el.setAttribute(k, NO_AUTOFILL[k]);
+}
+
 function startEdit(e, isNew) {
   finishEdit(true);
   const input = document.createElement('input');
   input.id = 'edit';
+  noAutofill(input, e.from ? 'mm-relation-label' : 'mm-concept-label');
   input.value = e.name || '';
   input.setAttribute('aria-label', e.from ? 'Relation name' : 'Concept name');
   document.body.appendChild(input);
@@ -212,6 +223,7 @@ function closeDesc() {
   render();
 }
 
+noAutofill($('desc-text'), 'mm-concept-description');
 $('desc-text').addEventListener('input', () => {
   clearTimeout(descTimer);
   descTimer = setTimeout(() => { flushDesc(); render(); }, 300);
@@ -246,7 +258,7 @@ svg.addEventListener('pointerdown', ev => {
     return;
   }
 
-  const marquee = !id && (ev.shiftKey || selectMode);
+  const marquee = !id && (ev.shiftKey || ev.ctrlKey || ev.altKey || ev.metaKey || selectMode);
   if (id && ev.shiftKey) {
     sel.has(id) ? sel.delete(id) : sel.add(id);
     connecting = false;
@@ -356,16 +368,18 @@ $('export').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
+svg.addEventListener('contextmenu', ev => ev.preventDefault());
 svg.addEventListener('wheel', ev => {
   ev.preventDefault();
   const s = screenPoint(ev);
-  if (ev.ctrlKey || ev.metaKey) zoomAt(s.x, s.y, model.view.k * Math.exp(-ev.deltaY * 0.01));
-  else {
-    model.view.x -= ev.deltaX;
-    model.view.y -= ev.deltaY;
+  if ((ev.shiftKey || ev.altKey) && !ev.ctrlKey && !ev.metaKey) {
+    const dx = ev.deltaX || (ev.shiftKey ? ev.deltaY : 0);
+    const dy = ev.deltaX || !ev.shiftKey ? ev.deltaY : 0;
+    model.view.x -= dx;
+    model.view.y -= dy;
     applyView();
     save();
-  }
+  } else zoomAt(s.x, s.y, model.view.k * Math.exp(-ev.deltaY * 0.01));
 }, { passive: false });
 $('zoom-in').addEventListener('click', () => zoomCentre(1.25));
 $('zoom-out').addEventListener('click', () => zoomCentre(0.8));
