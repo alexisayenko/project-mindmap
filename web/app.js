@@ -1,4 +1,5 @@
 const KEY = 'mindmap.v0';
+const MAX_LABEL = 16;
 const DEFAULT_NAME = 'New concept';
 const FONT = '16px system-ui, sans-serif';
 const LABEL_FONT = '14px system-ui, sans-serif';
@@ -39,9 +40,14 @@ function save() {
 const uid = () => Math.random().toString(36).slice(2, 10);
 const entity = id => model.entities.find(e => e.id === id);
 
+function shown(name) {
+  const c = Array.from(name);
+  return c.length > MAX_LABEL ? c.slice(0, MAX_LABEL - 1).join('') + '…' : name;
+}
+
 function radius(e) {
   ctx.font = FONT;
-  return Math.max(28, ctx.measureText(e.name).width / 2 + 14);
+  return Math.max(28, ctx.measureText(shown(e.name)).width / 2 + 14);
 }
 
 function el(name, attrs, parent) {
@@ -79,7 +85,9 @@ function render() {
   for (const e of model.entities) {
     const g = el('g', { class: 'node' + (activated.has(e.id) ? ' activated' : ''), 'data-id': e.id }, world);
     el('circle', { cx: e.x, cy: e.y, r: radius(e) }, g);
-    el('text', { x: e.x, y: e.y }, g).textContent = e.name;
+    const t = el('text', { x: e.x, y: e.y }, g);
+    t.textContent = shown(e.name);
+    if (shown(e.name) !== e.name) el('title', {}, g).textContent = e.name;
     if (relFrom === e.id) g.classList.add('src');
     if (e.description) el('circle', { class: 'hasdesc', cx: e.x, cy: e.y + radius(e) - 7, r: 2.5 }, g);
     if (relFrom || activated.size !== 1 || !activated.has(e.id)) continue;
