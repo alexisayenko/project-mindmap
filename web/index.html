@@ -10,7 +10,7 @@
 <header id="toolbar">
   <strong class="brand">mindgram</strong>
   <button id="connect" type="button">Connect</button>
-  <button id="select" type="button" aria-pressed="false">Select</button>
+  <button id="activate" type="button" aria-pressed="false">Activate</button>
   <button id="delete" type="button">Delete</button>
   <button id="export" type="button">Export JSON</button>
   <button id="zoom-out" type="button" aria-label="Zoom out">-</button>
@@ -20,12 +20,13 @@
   <button id="clear" type="button">Clear</button>
 </header>
 <svg id="canvas" aria-label="Concept map"></svg>
-<aside id="desc" role="dialog" aria-labelledby="desc-title" hidden>
-  <h2 id="desc-title"></h2>
-  <textarea id="desc-text" aria-label="Concept description" placeholder="Describe this concept"></textarea>
-  <button id="desc-close" type="button">Close</button>
+<aside id="infobox" role="complementary" aria-label="Infobox" hidden>
+  <p id="info-type" class="type"></p>
+  <input id="info-name" type="text">
+  <p id="info-ends" class="ends" hidden><span id="info-from"></span> -&gt; <span id="info-to"></span></p>
+  <textarea id="info-text" aria-label="Concept description" placeholder="Describe this concept"></textarea>
 </aside>
-<footer id="hint">Double-click to add a concept. Drag a circle to move it, empty space to pan; Shift, Ctrl, Alt or Cmd+drag to select a group; wheel or pinch to zoom, Shift+wheel or Alt+wheel to pan. Connect circles to relate them.</footer>
+<footer id="hint">Double-click to add a concept. Click a circle or line to activate it (Esc deactivates) and see its infobox; drag a circle to move it, empty space to pan; Shift, Ctrl, Alt or Cmd+drag to activate a group; wheel or pinch to zoom, Shift+wheel or Alt+wheel to pan. To relate circles, activate a circle and press + (or Connect), then click another circle; Esc, right-click or empty space cancels.</footer>
 <script src="app.js"></script>
 </body>
 </html>

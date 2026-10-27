@@ -11,11 +11,11 @@ const $ = id => document.getElementById(id);
 const ctx = document.createElement('canvas').getContext('2d');
 
 let model = load();
-let sel = new Set();
-let selectMode = false;
-let connecting = false;
+let activated = new Set();
+let activateMode = false;
+let relFrom = null;
+let lastScreen = null;
 let editing = null;
-let descId = null, descTimer = 0;
 let lastTap = { t: 0, x: 0, y: 0 };
 
 function load() {
@@ -60,7 +60,7 @@ function render() {
     const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
     const ra = radius(a), rb = radius(b);
     if (d <= ra + rb) continue;
-    const g = el('g', { class: 'edge' + (sel.has(r.id) ? ' sel' : ''), 'data-id': r.id }, world);
+    const g = el('g', { class: 'edge' + (activated.has(r.id) ? ' activated' : ''), 'data-id': r.id }, world);
     const p = [a.x + dx / d * ra, a.y + dy / d * ra, b.x - dx / d * rb, b.y - dy / d * rb];
     for (const cls of ['hit', '']) {
       el('line', { class: cls, x1: p[0], y1: p[1], x2: p[2], y2: p[3] }, g);
@@ -77,23 +77,48 @@ function render() {
     }
   }
   for (const e of model.entities) {
-    const g = el('g', { class: 'node' + (sel.has(e.id) ? ' sel' : ''), 'data-id': e.id }, world);
+    const g = el('g', { class: 'node' + (activated.has(e.id) ? ' activated' : ''), 'data-id': e.id }, world);
     el('circle', { cx: e.x, cy: e.y, r: radius(e) }, g);
     el('text', { x: e.x, y: e.y }, g).textContent = e.name;
+    if (relFrom === e.id) g.classList.add('src');
+    if (e.description) el('circle', { class: 'hasdesc', cx: e.x, cy: e.y + radius(e) - 7, r: 2.5 }, g);
+    if (relFrom || activated.size !== 1 || !activated.has(e.id)) continue;
     const r = radius(e) * Math.SQRT1_2;
-    const b = el('g', { class: 'info' + (e.description ? ' has' : ''), 'data-x': e.x + r, 'data-y': e.y - r, tabindex: 0, role: 'button', 'aria-label': 'Show description of ' + e.name }, g);
-    el('circle', { r: 10 }, b);
-    el('text', {}, b).textContent = 'i';
+    const p = el('g', { class: 'plus', 'data-x': e.x + r, 'data-y': e.y + r, tabindex: 0, role: 'button', 'aria-label': 'Add relation from ' + e.name }, g);
+    el('circle', { r: 10 }, p);
+    el('text', {}, p).textContent = '+';
   }
-  const one = sel.size === 1 ? entity([...sel][0]) : null;
-  $('connect').disabled = !one;
-  $('connect').setAttribute('aria-pressed', String(connecting));
-  $('delete').disabled = !sel.size;
-  const d = descId && entity(descId);
-  if (descId && !d) closeDesc();
-  else if (d) $('desc-title').textContent = d.name;
-  $('select').setAttribute('aria-pressed', String(selectMode));
+  if (relFrom && !entity(relFrom)) relFrom = null;
+  if (relFrom) el('line', { class: 'relline', 'data-from': relFrom, x1: 0, y1: 0, x2: 0, y2: 0 }, world);
+  svg.classList.toggle('relating', !!relFrom);
+  const one = activated.size === 1 ? entity([...activated][0]) : null;
+  $('connect').disabled = !one && !relFrom;
+  $('connect').setAttribute('aria-pressed', String(!!relFrom));
+  $('delete').disabled = !activated.size;
+  $('activate').setAttribute('aria-pressed', String(activateMode));
+  refreshInfobox();
   applyView();
+}
+
+function refreshInfobox() {
+  const box = $('infobox'), id = activated.size === 1 && !relFrom ? [...activated][0] : null;
+  const e = id && entity(id), rel = id && model.relations.find(x => x.id === id);
+  const item = e || rel;
+  box.hidden = !item;
+  if (!item) { box.dataset.id = ''; return; }
+  const fresh = box.dataset.id !== id;
+  box.dataset.id = id;
+  $('info-type').textContent = e ? 'Concept' : 'Relation';
+  if (fresh || document.activeElement !== $('info-name')) $('info-name').value = item.name || '';
+  $('info-name').setAttribute('aria-label', e ? 'Concept name' : 'Relation name');
+  $('info-text').hidden = !e;
+  if (e && (fresh || document.activeElement !== $('info-text'))) $('info-text').value = e.description || '';
+  const a = rel && entity(rel.from), b = rel && entity(rel.to);
+  $('info-ends').hidden = !rel;
+  for (const [k, n] of [['from', a], ['to', b]]) {
+    const btn = $('info-' + k);
+    btn.textContent = n ? n.name : '?';
+  }
 }
 
 function changed() { save(); render(); }
@@ -112,8 +137,34 @@ function applyView() {
   const v = model.view;
   world.setAttribute('transform', `translate(${v.x} ${v.y}) scale(${v.k})`);
   $('zoom-level').textContent = Math.round(v.k * 100) + '%';
-  for (const b of world.querySelectorAll('.info')) b.setAttribute('transform', `translate(${b.dataset.x} ${b.dataset.y}) scale(${1 / v.k})`);
+  for (const b of world.querySelectorAll('.plus')) b.setAttribute('transform', `translate(${b.dataset.x} ${b.dataset.y}) scale(${1 / v.k})`);
+  updateRelLine();
   placeEditor();
+}
+
+function updateRelLine() {
+  const l = world.querySelector('.relline'), a = l && entity(l.dataset.from);
+  if (!a || !lastScreen) return l && l.setAttribute('visibility', 'hidden');
+  const v = model.view;
+  l.setAttribute('visibility', 'visible');
+  l.setAttribute('x1', a.x);
+  l.setAttribute('y1', a.y);
+  l.setAttribute('x2', (lastScreen.x - v.x) / v.k);
+  l.setAttribute('y2', (lastScreen.y - v.y) / v.k);
+}
+
+function startRelation(id, ev) {
+  if (!entity(id)) return;
+  finishEdit(false);
+  relFrom = id;
+  if (ev) lastScreen = screenPoint(ev);
+  render();
+}
+
+function cancelRelation() {
+  if (!relFrom) return;
+  relFrom = null;
+  render();
 }
 
 function placeEditor() {
@@ -147,12 +198,12 @@ function addRelation(from, to) {
   model.relations.push({ id: uid(), from, to, name: '' });
 }
 
-function removeSelected() {
-  if (!sel.size) return;
-  model.entities = model.entities.filter(e => !sel.has(e.id));
-  model.relations = model.relations.filter(r => !sel.has(r.id) && !sel.has(r.from) && !sel.has(r.to));
-  sel = new Set();
-  connecting = false;
+function removeActivated() {
+  if (!activated.size) return;
+  model.entities = model.entities.filter(e => !activated.has(e.id));
+  model.relations = model.relations.filter(r => !activated.has(r.id) && !activated.has(r.from) && !activated.has(r.to));
+  activated = new Set();
+  relFrom = null;
   changed();
 }
 
@@ -197,83 +248,77 @@ function finishEdit(cancel) {
   changed();
 }
 
-function flushDesc() {
-  clearTimeout(descTimer);
-  const e = descId && entity(descId);
-  if (e && e.description !== $('desc-text').value) { e.description = $('desc-text').value; save(); }
+noAutofill($('info-name'), 'mm-infobox-name');
+noAutofill($('info-text'), 'mm-concept-description');
+function infoItem() {
+  const id = $('infobox').dataset.id;
+  return entity(id) || model.relations.find(x => x.id === id);
 }
-
-function openDesc(id) {
-  finishEdit(false);
-  flushDesc();
-  const e = entity(id);
-  if (!e) return;
-  descId = id;
-  $('desc-title').textContent = e.name;
-  $('desc-text').value = e.description || '';
-  $('desc').hidden = false;
-  $('desc-text').focus();
-}
-
-function closeDesc() {
-  if (!descId) return;
-  flushDesc();
-  descId = null;
-  $('desc').hidden = true;
-  render();
-}
-
-noAutofill($('desc-text'), 'mm-concept-description');
-$('desc-text').addEventListener('input', () => {
-  clearTimeout(descTimer);
-  descTimer = setTimeout(() => { flushDesc(); render(); }, 300);
+$('info-name').addEventListener('input', () => {
+  const it = infoItem();
+  if (!it) return;
+  it.name = $('info-name').value;
+  changed();
 });
-$('desc-close').addEventListener('click', closeDesc);
-document.addEventListener('pointerdown', ev => {
-  if (descId && !ev.target.closest('#desc, .info')) closeDesc();
-}, true);
+$('info-name').addEventListener('blur', () => {
+  const it = infoItem();
+  if (it && !it.from && !it.name.trim()) { it.name = DEFAULT_NAME; $('info-name').value = it.name; changed(); }
+});
+$('info-text').addEventListener('input', () => {
+  const it = infoItem();
+  if (!it || it.from) return;
+  it.description = $('info-text').value;
+  changed();
+});
 svg.addEventListener('click', ev => {
-  const b = ev.target.closest('.info');
-  if (b) openDesc(b.closest('[data-id]').dataset.id);
+  const p = ev.target.closest('.plus');
+  if (p) startRelation(p.closest('[data-id]').dataset.id, ev);
 });
 svg.addEventListener('keydown', ev => {
-  const b = ev.target.closest && ev.target.closest('.info');
-  if (b && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); ev.stopPropagation(); openDesc(b.closest('[data-id]').dataset.id); }
+  const b = ev.target.closest && ev.target.closest('.plus');
+  if (!b || (ev.key !== 'Enter' && ev.key !== ' ')) return;
+  ev.preventDefault();
+  ev.stopPropagation();
+  const id = b.closest('[data-id]').dataset.id;
+  startRelation(id);
 });
 
 svg.addEventListener('pointerdown', ev => {
-  if (ev.button > 0 || ev.target.closest('.info')) return;
+  if (relFrom) {
+    ev.preventDefault();
+    lastScreen = screenPoint(ev);
+    const t = ev.target.closest('[data-id]'), tid = t ? t.dataset.id : null;
+    if (ev.button === 0 && tid && tid !== relFrom && entity(tid)) {
+      addRelation(relFrom, tid);
+      relFrom = null;
+      activated = new Set([tid]);
+      changed();
+    } else cancelRelation();
+    return;
+  }
+  if (ev.button > 0 || ev.target.closest('.plus')) return;
   finishEdit(false);
   const target = ev.target.closest('[data-id]');
   const id = target ? target.dataset.id : null;
   const e = id && entity(id);
   const start = point(ev);
 
-  const one = sel.size === 1 ? [...sel][0] : null;
-  if (e && connecting && one && one !== id && entity(one)) {
-    addRelation(one, id);
-    connecting = false;
-    sel = new Set([id]);
-    changed();
-    return;
-  }
-
-  const marquee = !id && (ev.shiftKey || ev.ctrlKey || ev.altKey || ev.metaKey || selectMode);
+  const marquee = !id && (ev.shiftKey || ev.ctrlKey || ev.altKey || ev.metaKey || activateMode);
   if (id && ev.shiftKey) {
-    sel.has(id) ? sel.delete(id) : sel.add(id);
-    connecting = false;
+    activated.has(id) ? activated.delete(id) : activated.add(id);
     render();
     return;
   }
-  if (!sel.has(id)) sel = new Set(id ? [id] : []);
-  connecting = false;
+  if (!activated.has(id)) activated = new Set(id ? [id] : []);
   render();
 
   const sStart = screenPoint(ev), v0 = { ...model.view };
-  const group = e ? model.entities.filter(n => sel.has(n.id)).map(n => ({ n, dx: n.x - start.x, dy: n.y - start.y })) : [];
+  const group = e ? model.entities.filter(n => activated.has(n.id)).map(n => ({ n, dx: n.x - start.x, dy: n.y - start.y })) : [];
   const drag = e ? { moved: false } : null;
   const pan = !id ? { moved: false } : null;
   const rect = marquee ? el('rect', { class: 'marquee' }, svg) : null;
+  const cur = rect ? 'marquee' : e || pan ? 'grabbing' : null;
+  if (cur) document.documentElement.classList.add(cur);
   const move = m => {
     const s = screenPoint(m);
     if (rect) {
@@ -303,13 +348,14 @@ svg.addEventListener('pointerdown', ev => {
     window.removeEventListener('pointermove', move);
     window.removeEventListener('pointerup', up);
     window.removeEventListener('pointercancel', up);
+    if (cur) document.documentElement.classList.remove(cur);
     if (rect) {
       rect.remove();
       const s = screenPoint(u), v = model.view;
       const x1 = (Math.min(s.x, sStart.x) - v.x) / v.k, x2 = (Math.max(s.x, sStart.x) - v.x) / v.k;
       const y1 = (Math.min(s.y, sStart.y) - v.y) / v.k, y2 = (Math.max(s.y, sStart.y) - v.y) / v.k;
-      sel = new Set(model.entities.filter(n => n.x >= x1 && n.x <= x2 && n.y >= y1 && n.y <= y2).map(n => n.id));
-      for (const r of model.relations) if (sel.has(r.from) && sel.has(r.to)) sel.add(r.id);
+      activated = new Set(model.entities.filter(n => n.x >= x1 && n.x <= x2 && n.y >= y1 && n.y <= y2).map(n => n.id));
+      for (const r of model.relations) if (activated.has(r.from) && activated.has(r.to)) activated.add(r.id);
       render();
       return;
     }
@@ -324,7 +370,7 @@ svg.addEventListener('pointerdown', ev => {
     if (!id) {
       const n = { id: uid(), name: DEFAULT_NAME, description: '', x: p.x, y: p.y, properties: {} };
       model.entities.push(n);
-      sel = new Set([n.id]);
+      activated = new Set([n.id]);
       changed();
       startEdit(n, true);
     }
@@ -334,31 +380,44 @@ svg.addEventListener('pointerdown', ev => {
   window.addEventListener('pointercancel', up);
 });
 
+window.addEventListener('pointermove', ev => {
+  if (!relFrom) return;
+  lastScreen = screenPoint(ev);
+  updateRelLine();
+});
+
 window.addEventListener('keydown', ev => {
-  if (ev.key === 'Escape' && descId) return closeDesc();
+  if (ev.key === 'Escape' && relFrom) return cancelRelation();
+  if (ev.key === 'Escape') {
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    if (activated.size) { activated = new Set(); render(); }
+    return;
+  }
   if (ev.target.closest('input, button, textarea')) {
     if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA') return;
     if (ev.key !== 'Delete' && ev.key !== 'Backspace') return;
   }
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'a') {
     ev.preventDefault();
-    sel = new Set([...model.entities, ...model.relations].map(x => x.id));
+    activated = new Set([...model.entities, ...model.relations].map(x => x.id));
     return render();
   }
-  if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); removeSelected(); }
-  else if (ev.key === 'Escape') { connecting = false; render(); }
+  if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); removeActivated(); }
 });
 
-$('connect').addEventListener('click', () => { connecting = !connecting && sel.size === 1 && !!entity([...sel][0]); render(); });
-$('delete').addEventListener('click', removeSelected);
+$('connect').addEventListener('click', () => {
+  if (relFrom) return cancelRelation();
+  if (activated.size === 1) startRelation([...activated][0]);
+});
+$('delete').addEventListener('click', removeActivated);
 $('clear').addEventListener('click', () => {
   if (!confirm('Remove all concepts and relations?')) return;
   model = { version: 0, entities: [], relations: [], view: model.view };
-  sel = new Set();
-  connecting = false;
+  activated = new Set();
+  relFrom = null;
   changed();
 });
-$('select').addEventListener('click', () => { selectMode = !selectMode; render(); });
+$('activate').addEventListener('click', () => { activateMode = !activateMode; render(); });
 $('export').addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob([JSON.stringify(model, null, 2)], { type: 'application/json' }));
   const a = document.createElement('a');
@@ -368,7 +427,7 @@ $('export').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
-svg.addEventListener('contextmenu', ev => ev.preventDefault());
+svg.addEventListener('contextmenu', ev => { ev.preventDefault(); cancelRelation(); });
 svg.addEventListener('wheel', ev => {
   ev.preventDefault();
   const s = screenPoint(ev);

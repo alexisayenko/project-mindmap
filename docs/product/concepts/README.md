@@ -15,7 +15,7 @@ features. Each file covers data model, invariants, edge cases,
 and constraints.
 
 Concepts here: entity, relation, region, level, in
-[core-model.md](core-model.md).
+[core-model.md](core-model.md); interaction terms (activated, infobox) in [interaction.md](interaction.md).
 
 ## What a concept is not
 
