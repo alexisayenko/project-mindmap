@@ -10,12 +10,22 @@
 <header id="toolbar">
   <strong class="brand">mindgram</strong>
   <button id="connect" type="button">Connect</button>
+  <button id="select" type="button" aria-pressed="false">Select</button>
   <button id="delete" type="button">Delete</button>
   <button id="export" type="button">Export JSON</button>
+  <button id="zoom-out" type="button" aria-label="Zoom out">-</button>
+  <span id="zoom-level" aria-live="polite">100%</span>
+  <button id="zoom-in" type="button" aria-label="Zoom in">+</button>
+  <button id="zoom-reset" type="button">Reset view</button>
   <button id="clear" type="button">Clear</button>
 </header>
 <svg id="canvas" aria-label="Concept map"></svg>
-<footer id="hint">Double-click to add a concept. Drag to move. Connect circles to relate them.</footer>
+<aside id="desc" role="dialog" aria-labelledby="desc-title" hidden>
+  <h2 id="desc-title"></h2>
+  <textarea id="desc-text" aria-label="Concept description" placeholder="Describe this concept"></textarea>
+  <button id="desc-close" type="button">Close</button>
+</aside>
+<footer id="hint">Double-click to add a concept. Drag a circle to move it, empty space to pan; Shift+drag to select a group; Ctrl+wheel or pinch to zoom. Connect circles to relate them.</footer>
 <script src="app.js"></script>
 </body>
 </html>
