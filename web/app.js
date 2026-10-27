@@ -180,11 +180,6 @@ function render() {
     const head = (x, y, sx, sy) => el('path', { class: 'arrow', d: `M${x} ${y}L${x - (sx * ARROW_L + sy * ARROW_W) * A} ${y - (sy * ARROW_L - sx * ARROW_W) * A}L${x - (sx * ARROW_L - sy * ARROW_W) * A} ${y - (sy * ARROW_L + sx * ARROW_W) * A}Z` }, g);
     if (toB) head(p[2], p[3], ux, uy);
     if (toA) head(p[0], p[1], -ux, -uy);
-    if (r.locked) {
-      const mx = (p[0] + p[2]) / 2, my = (p[1] + p[3]) / 2;
-      const l = el('g', { class: 'locksign', transform: `translate(${mx} ${my}) scale(${Z}) translate(-6 5) scale(0.75)` }, g);
-      l.appendChild(lockShapes(true));
-    }
     if (showNames && r.name && !(editing && editing.e === r)) {
       ctx.font = LABEL_FONT;
       const w = ctx.measureText(r.name).width + 12, mx = (p[0] + p[2]) / 2, my = (p[1] + p[3]) / 2;

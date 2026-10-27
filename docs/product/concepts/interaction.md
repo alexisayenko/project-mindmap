@@ -20,7 +20,7 @@ Vocabulary for how the user points at things on the canvas.
   clicked becomes the other end.
 - **Relation mode** - the state between pressing + and the next click; a live
   line follows the pointer. Click another circle relates to it. Click on empty canvas creates a new circle there (default name), relates the source to it, activates it and opens its name editor with the text selected (Enter/blur commits, Esc keeps the default name). Esc, right click or a click on the source circle cancels without creating anything.
-- **Lock** - the padlock button in a relation's infobox toggles `locked` (tooltip "Lock" / "Unlock"); a locked relation shows a small padlock under its midpoint. Dragging a circle also moves every circle reachable through locked relations (chains included), keeping offsets; a circle in the activated group and locked-connected moves once. Locked followers trail the dragged circle on a damped spring and settle at their offsets (instant with reduced motion).
+- **Lock** - the padlock button in a relation's infobox toggles `locked` (tooltip "Lock" / "Unlock"); the canvas shows no marker for it. Dragging a circle also moves every circle reachable through locked relations (chains included), keeping offsets; a circle in the activated group and locked-connected moves once. Locked followers trail the dragged circle on a damped spring and settle at their offsets (instant with reduced motion).
 
 In code the activated set is `activated` and the CSS class is `.activated`.
 

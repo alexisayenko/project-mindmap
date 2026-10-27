@@ -65,5 +65,3 @@ html.marquee,html.marquee *{cursor:crosshair!important}
 
 #info-lock{padding:2px 6px;line-height:0;cursor:pointer;vertical-align:middle;margin-left:6px}
 #info-lock svg{display:block}
-.edge .locksign{color:var(--muted);pointer-events:none}
-.edge.activated .locksign{color:var(--accent)}
